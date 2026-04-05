@@ -24,7 +24,10 @@ VERSION = "Grounded-v2.1"
 print(f"--- COGNIVIO AGENT STARTING VERSION: {VERSION} ---")
 
 # MongoDB Connection
-MONGO_URI = "mongodb+srv://gujjarkaleem37_db_user:kaleem217@cluster0.jzi2xz0.mongodb.net/ecommerce?retryWrites=true&w=majority"
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    logger.error("MONGO_URI not found in environment variables!")
+
 try:
     client_db = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
     db = client_db.get_database("ecommerce")
