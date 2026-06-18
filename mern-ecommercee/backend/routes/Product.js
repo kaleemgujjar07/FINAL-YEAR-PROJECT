@@ -4,6 +4,7 @@ const router=express.Router()
 
 router
     .post("/",productController.create)
+    .post("/sync",productController.syncFromERP)
     .get("/",productController.getAll)
     .get("/:id",productController.getById)
     .patch("/:id",productController.updateById)

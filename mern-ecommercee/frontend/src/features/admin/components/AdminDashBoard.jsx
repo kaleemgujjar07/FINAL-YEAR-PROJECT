@@ -128,7 +128,7 @@ export const AdminDashBoard = () => {
                         {
                             brands?.map((brand)=>(
                                 <motion.div style={{width:"fit-content"}} whileHover={{x:5}} whileTap={{scale:0.9}}>
-                                    <FormControlLabel sx={{ml:1}} control={<Checkbox whileHover={{scale:1.1}} />} label={brand.name} value={brand._id} />
+                                    <FormControlLabel sx={{ml:1}} control={<Checkbox whileHover={{scale:1.1}} />} label={brand?.name} value={brand?._id} />
                                 </motion.div>
                             ))
                         }
@@ -149,7 +149,7 @@ export const AdminDashBoard = () => {
                         {
                             categories?.map((category)=>(
                                 <motion.div style={{width:"fit-content"}} whileHover={{x:5}} whileTap={{scale:0.9}}>
-                                    <FormControlLabel sx={{ml:1}} control={<Checkbox whileHover={{scale:1.1}} />} label={category.name} value={category._id} />
+                                    <FormControlLabel sx={{ml:1}} control={<Checkbox whileHover={{scale:1.1}} />} label={category?.name} value={category?._id} />
                                 </motion.div>
                             ))
                         }
@@ -163,8 +163,12 @@ export const AdminDashBoard = () => {
 
     <Stack rowGap={5} mt={is600?2:5} mb={'3rem'}>
 
-        {/* sort options */}
+        {/* add product and sort options */}
         <Stack flexDirection={'row'} mr={'2rem'} justifyContent={'flex-end'} alignItems={'center'} columnGap={5}>
+
+            <Button component={Link} to="/admin/add-product" variant="contained" color="success">
+                Add Product
+            </Button>
 
             <Stack alignSelf={'flex-end'} width={'12rem'}>
                 <FormControl fullWidth>
@@ -193,7 +197,7 @@ export const AdminDashBoard = () => {
                 products.map((product)=>(
                     <Stack>
                         <Stack sx={{opacity:product.isDeleted?.7:1}}>
-                            <ProductCard key={product._id} id={product._id} title={product.title} thumbnail={product.thumbnail} brand={product.brand.name} price={product.price} isAdminCard={true}/>
+                            <ProductCard key={product._id} id={product._id} title={product.title} thumbnail={product.thumbnail} brand={product.brand?.name} price={product.price} isAdminCard={true}/>
                         </Stack>
                         <Stack paddingLeft={2} paddingRight={2} flexDirection={'row'} justifySelf={'flex-end'} alignSelf={'flex-end'} columnGap={is488?1:2}>
                             <Button component={Link} to={`/admin/product-update/${product._id}`} variant='contained'>Update</Button>

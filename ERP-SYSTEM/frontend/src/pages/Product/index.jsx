@@ -29,7 +29,8 @@ export default function Product() {
     },
     {
       title: translate('Category'),
-      dataIndex: ['category', 'name'],
+      dataIndex: 'category',
+      render: (category) => (category?.name || category),
     },
     {
       title: translate('Price'),
@@ -53,7 +54,8 @@ export default function Product() {
     },
     {
       title: translate('Category'),
-      dataIndex: ['category', 'name'],
+      dataIndex: 'category',
+      render: (category) => (category?.name || category),
     },
     {
       title: translate('Price'),

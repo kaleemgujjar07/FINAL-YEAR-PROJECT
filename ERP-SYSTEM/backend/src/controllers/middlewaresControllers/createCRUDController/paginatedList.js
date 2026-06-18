@@ -25,7 +25,7 @@ const paginatedList = async (Model, req, res) => {
 
   //  Query the database for a list of all results
   const resultsPromise = Model.find({
-    removed: false,
+    removed: { $ne: true },
 
     [filter]: equal,
     ...fields,
@@ -38,7 +38,7 @@ const paginatedList = async (Model, req, res) => {
 
   // Counting the total documents
   const countPromise = Model.countDocuments({
-    removed: false,
+    removed: { $ne: true },
 
     [filter]: equal,
     ...fields,

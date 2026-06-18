@@ -28,9 +28,7 @@ const productSchema = new mongoose.Schema({
     trim: true,
   },
   category: {
-    type: mongoose.Schema.ObjectId,
-    ref: 'Category',
-    autopopulate: true,
+    type: String,
     required: true,
   },
   price: {

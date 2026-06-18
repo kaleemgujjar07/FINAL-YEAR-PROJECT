@@ -3,6 +3,7 @@ import json
 import socketserver
 import sys
 import os
+from dotenv import load_dotenv
 from pymongo import MongoClient
 from groq import Groq
 import logging
@@ -14,6 +15,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
+load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     logger.error("GROQ_API_KEY not found in environment variables!")
@@ -70,7 +72,7 @@ def get_inventory_status(product_name=None):
                     product = coll.find_one(word_query)
 
             if product:
-                return f"Found '{product['title']}': Stock is {product.get('quantity', product.get('stockQuantity', 'N/A'))}."
+                return f"Found '{product['title']}': Price is ${product.get('price', 'N/A')}, Stock is {product.get('quantity', product.get('stockQuantity', 'N/A'))}."
             return f"Product '{p_name}' not found in our inventory."
         else:
             count = coll.count_documents({})
@@ -216,6 +218,41 @@ def add_to_cart_logic(product_name):
         logger.error(f"Cart Tool Error: {e}")
         return f"Database error identifying product: {str(e)}"
 
+def get_product_recommendations():
+    """Fetches a few featured products for recommendations."""
+    if db is None: return "Database offline."
+    try:
+        coll = db["products"]
+        # Fetch 5 products
+        products = list(coll.find({}, {"title": 1, "price": 1, "quantity": 1}).limit(5))
+        if products:
+            formatted = "Here are some top-rated products I recommend for you:\n"
+            for p in products:
+                stock_status = "In Stock" if p.get('quantity', 0) > 0 else "Out of Stock"
+                formatted += f"- **{p['title']}** | Price: ${p.get('price', 'N/A')} | Status: {stock_status}\n"
+            return formatted
+        return "I couldn't find any products to recommend right now."
+    except Exception as e:
+        logger.error(f"Recommendation Tool Error: {e}")
+        return f"Error fetching recommendations: {str(e)}"
+
+def search_products(query):
+    """Searches for products based on a query string."""
+    if db is None: return "Database offline."
+    try:
+        coll = db["products"]
+        search_filter = {"title": {"$regex": query, "$options": "i"}}
+        results = list(coll.find(search_filter, {"title": 1, "price": 1, "quantity": 1}).limit(5))
+        if results:
+            formatted = f"I found these products matching '{query}':\n"
+            for p in results:
+                formatted += f"- {p['title']} (${p.get('price', 'N/A')})\n"
+            return formatted
+        return f"No products found matching '{query}'."
+    except Exception as e:
+        logger.error(f"Search Tool Error: {e}")
+        return f"Error searching products: {str(e)}"
+
 def get_user_orders(user_id):
     """Fetches the user's order history from MongoDB."""
     if db is None: return {"status": "error", "message": "Database offline."}
@@ -310,11 +347,11 @@ SEARCH_KNOWLEDGE_TOOL = {
     "type": "function",
     "function": {
         "name": "search_knowledge",
-        "description": "Search the database for company information, architecture, and policies.",
+        "description": "Search the internal knowledge base for company information, business policies, shipping details, and general help.",
         "parameters": {
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "Information to search for"}
+                "query": {"type": "string", "description": "The search query (e.g. 'return policy', 'shipping rates')"}
             },
             "required": ["query"]
         }
@@ -326,12 +363,38 @@ CUSTOMER_TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "get_inventory_status",
-            "description": "Check if a product is in stock.",
+            "name": "get_product_recommendations",
+            "description": "Get a list of recommended products from the store.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_products",
+            "description": "Search the product catalog for specific items by name or category.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "product_name": {"type": "string", "description": "Name of the product"}
+                    "query": {"type": "string", "description": "The search term for products"}
+                },
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_inventory_status",
+            "description": "Check stock and price for a specific product.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_name": {"type": "string"}
                 }
             }
         }
@@ -340,11 +403,11 @@ CUSTOMER_TOOLS = [
         "type": "function",
         "function": {
             "name": "add_to_cart_logic",
-            "description": "Add a product to the shopping cart.",
+            "description": "Add a product to the cart.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "product_name": {"type": "string", "description": "Name of product to add"}
+                    "product_name": {"type": "string"}
                 },
                 "required": ["product_name"]
             }
@@ -354,7 +417,7 @@ CUSTOMER_TOOLS = [
         "type": "function",
         "function": {
             "name": "get_user_profile",
-            "description": "Get the currently logged-in user's profile details.",
+            "description": "Get user profile details.",
             "parameters": {
                 "type": "object",
                 "properties": {},
@@ -366,7 +429,7 @@ CUSTOMER_TOOLS = [
         "type": "function",
         "function": {
             "name": "get_user_shipping_info",
-            "description": "Retrieve the user's shipping address from the database.",
+            "description": "Get user shipping address.",
             "parameters": {
                 "type": "object",
                 "properties": {},
@@ -378,7 +441,7 @@ CUSTOMER_TOOLS = [
         "type": "function",
         "function": {
             "name": "get_user_orders",
-            "description": "Check the user's recent order history and status.",
+            "description": "Get user order history.",
             "parameters": {
                 "type": "object",
                 "properties": {},
@@ -390,7 +453,7 @@ CUSTOMER_TOOLS = [
         "type": "function",
         "function": {
             "name": "proceed_to_checkout",
-            "description": "Take the user to the checkout page to finish their purchase.",
+            "description": "Go to checkout page.",
             "parameters": {
                 "type": "object",
                 "properties": {},
@@ -439,21 +502,25 @@ available_functions = {
     "proceed_to_checkout": proceed_to_checkout,
     "get_user_profile": get_user_profile,
     "get_user_orders": get_user_orders,
+    "get_product_recommendations": get_product_recommendations,
+    "search_products": search_products,
 }
 
 # --- PROMPTS ---
 
 CUSTOMER_SYSTEM_PROMPT = """
-You are the Cognivio Shopping Assistant. 
-1. ALWAYS use tools to check the database for any product, USER PROFILE, or ORDER HISTORY mentioned.
-2. If the user asks about themselves, their shipping info, their orders, or "credentials", use your tools to fetch their records relative to their current login.
-3. Trust the database over your pre-training. 
+You are the Cognivio Shopping Assistant.
+- Use provided tools to fetch products, check inventory, and search knowledge.
+- Always summarize tool results naturally for the user.
+- If recommending products, list their names and prices clearly.
+- If you can't find something, say so politely.
 """
 
 ADMIN_SYSTEM_PROMPT = """
 You are the Cognivio ERP Manager. 
-1. Use tools for reports and grounding.
-2. Trust the database over pre-trained information.
+1. Use the provided tools for financial reports, inventory status, and knowledge searches.
+2. ALWAYS use the standard tool-calling API. NEVER generate XML tags like <function> or <tool>.
+3. Trust the database over pre-trained information.
 """
 
 # --- AGENT LOGIC ---
@@ -532,6 +599,11 @@ def run_agentic_conversation(user_message, chat_history=[], role="customer", use
                     if function_to_call:
                         logger.info(f"Executing tool: {function_name}")
                         sig = inspect.signature(function_to_call)
+                        
+                        # Ensure function_args is a dict
+                        if function_args is None:
+                            function_args = {}
+                            
                         if "user_id" in sig.parameters and user_id:
                             function_args["user_id"] = user_id
                         
@@ -654,6 +726,78 @@ class AIServiceHandler(http.server.BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps(response_payload).encode('utf-8'))
             except Exception as e:
                 logger.error(f"Forecast Error: {e}")
+                self.send_response(500)
+                self.end_headers()
+
+        elif self.path == '/price-suggestion':
+            try:
+                base_price = float(data.get('base_price', 100))
+                demand = data.get('demand', 'medium')
+                competitor_price = data.get('competitor_price')
+                
+                # Intelligent Pricing Logic
+                suggested_price = base_price
+                logic = "Stable market conditions. Base price maintained."
+                
+                if demand == 'high':
+                    suggested_price = base_price * 1.20
+                    logic = "Aggressive 20% increase due to high market demand."
+                elif demand == 'low':
+                    suggested_price = base_price * 0.90
+                    logic = "10% discount applied to stimulate demand."
+                
+                if competitor_price:
+                    comp_p = float(competitor_price)
+                    if comp_p < suggested_price:
+                        suggested_price = comp_p - 0.50
+                        logic = "Price matched and undercut competitor by $0.50."
+
+                response_payload = {
+                    "suggested_price": round(suggested_price, 2),
+                    "logic": logic,
+                    "status": "success"
+                }
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(response_payload).encode('utf-8'))
+            except Exception as e:
+                logger.error(f"Price Suggestion Error: {e}")
+                self.send_response(500)
+                self.end_headers()
+
+        elif self.path == '/recommendations':
+            try:
+                # Simple recommendation logic: fetch some featured products
+                # In a real app, this would use the user_id and product_history from the request
+                if db is not None:
+                    coll = db["products"]
+                    # Fetch products with highest stock or just the first few
+                    products_list = list(coll.find({}, {"title": 1}).limit(10))
+                    import random
+                    if len(products_list) > 4:
+                        sampled_products = random.sample(products_list, 4)
+                    else:
+                        sampled_products = products_list
+                    
+                    titles = [p['title'] for p in sampled_products]
+                else:
+                    titles = ["Laptop", "Wireless Mouse", "Keyboard", "Monitor"] # Fallback
+                
+                response_payload = {
+                    "recommendations": titles,
+                    "status": "success"
+                }
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(response_payload).encode('utf-8'))
+            except Exception as e:
+                logger.error(f"Recommendations Error: {e}")
                 self.send_response(500)
                 self.end_headers()
 

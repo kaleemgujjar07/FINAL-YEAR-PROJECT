@@ -1,5 +1,79 @@
 const { Schema, default: mongoose } = require("mongoose")
 const Product=require("../models/Product")
+const Brand=require("../models/Brand")
+const Category=require("../models/Category")
+
+const createOrFindBrand = async (brandName) => {
+    if (!brandName) return null;
+    const trimmed = brandName.trim();
+    let brand = await Brand.findOne({ name: trimmed });
+    if (!brand) brand = await Brand.create({ name: trimmed });
+    return brand._id;
+};
+
+const createOrFindCategory = async (categoryName) => {
+    if (!categoryName) return null;
+    const trimmed = categoryName.trim();
+    let category = await Category.findOne({ name: trimmed });
+    if (!category) category = await Category.create({ name: trimmed });
+    return category._id;
+};
+
+const safeString = (value, fallback = '') => typeof value === 'string' && value.trim() ? value.trim() : fallback;
+
+exports.syncFromERP = async (req, res) => {
+    try {
+        const payload = req.body || {};
+        const title = safeString(payload.title || payload.name, 'Untitled Product');
+        const description = safeString(payload.description, title);
+        const price = Number(payload.price || 0);
+        const stockQuantity = Number(payload.stockQuantity ?? payload.quantity ?? 0);
+        const thumbnail = safeString(payload.thumbnail, 'https://via.placeholder.com/300x300?text=No+Image');
+        const images = Array.isArray(payload.images) && payload.images.length ? payload.images : [thumbnail];
+        const discountPercentage = Number(payload.discountPercentage ?? 0);
+        const categoryName = safeString(payload.category, 'Uncategorized');
+        const brandName = safeString(payload.brand, payload.brandName || 'Generic');
+        const erpProductId = safeString(payload.erpProductId, payload.erpId || '');
+        const isDeleted = Boolean(payload.isDeleted || payload.removed);
+
+        const categoryId = await createOrFindCategory(categoryName);
+        const brandId = await createOrFindBrand(brandName);
+
+        const productData = {
+            title,
+            description,
+            price,
+            discountPercentage,
+            stockQuantity,
+            thumbnail,
+            images,
+            category: categoryId,
+            brand: brandId,
+            erpProductId,
+            isDeleted,
+        };
+
+        let product = null;
+        if (erpProductId) {
+            product = await Product.findOne({ erpProductId });
+        }
+        if (!product) {
+            product = await Product.findOne({ title });
+        }
+
+        if (product) {
+            const updated = await Product.findByIdAndUpdate(product._id, productData, { new: true, runValidators: true });
+            return res.status(200).json({ success: true, result: updated, message: 'ERP product synced to ecommerce (updated).' });
+        }
+
+        const created = new Product(productData);
+        await created.save();
+        return res.status(201).json({ success: true, result: created, message: 'ERP product synced to ecommerce (created).' });
+    } catch (error) {
+        console.log('ERP sync error:', error);
+        return res.status(500).json({ message:'Error syncing ERP product to ecommerce', error: error.message });
+    }
+};
 
 exports.create=async(req,res)=>{
     try {

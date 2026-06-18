@@ -150,8 +150,8 @@ export const Checkout = () => {
                 <Grid container gap={2} width={is900?"auto":'50rem'} justifyContent={'flex-start'} alignContent={'flex-start'}>
                         {
                             addresses.map((address,index)=>(
-                                <FormControl item >
-                                    <Stack key={address._id} p={is480?2:2} width={is480?'100%':'20rem'} height={is480?'auto':'15rem'}  rowGap={2} component={is480?Paper:Paper} elevation={1}>
+                                <FormControl key={address._id}>
+                                    <Stack p={is480?2:2} width={is480?'100%':'20rem'} height={is480?'auto':'15rem'}  rowGap={2} component={is480?Paper:Paper} elevation={1}>
 
                                         <Stack flexDirection={'row'} alignItems={'center'}>
                                             <Radio checked={selectedAddress===address} name='addressRadioGroup' value={selectedAddress} onChange={(e)=>setSelectedAddress(addresses[index])}/>

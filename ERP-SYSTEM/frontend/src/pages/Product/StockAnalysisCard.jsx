@@ -16,7 +16,7 @@ export default function StockAnalysisCard() {
 
   if (isLoading) return <div className="whiteBox shadow pad20" style={{ height: '350px', marginBottom: '24px' }}>Loading...</div>;
 
-  const data = result?.result || [];
+  const data = result || [];
   
   const chartData = data.map((item, index) => ({
     name: item.name,

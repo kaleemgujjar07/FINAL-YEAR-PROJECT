@@ -40,7 +40,7 @@ const bannerImages=[banner1,banner3,banner2,banner4]
 export const ProductList = () => {
     const [filters,setFilters]=useState({})
     const [page,setPage]=useState(1)
-    const [sort,setSort]=useState(null)
+    const [sort,setSort]=useState('')
     const theme=useTheme()
 
     const is1200=useMediaQuery(theme.breakpoints.down(1200))
@@ -223,8 +223,8 @@ export const ProductList = () => {
                                     key={brand._id}
                                     sx={{ml: -0.5, '& .MuiTypography-root': {fontSize: '0.9rem'}}} 
                                     control={<Checkbox size="small" sx={{'&.Mui-checked': {color: 'primary.main'}}} />} 
-                                    label={brand.name} 
-                                    value={brand._id} 
+                                    label={brand?.name} 
+                                    value={brand?._id} 
                                 />
                             ))}
                         </FormGroup>
@@ -239,8 +239,8 @@ export const ProductList = () => {
                                     key={category._id}
                                     sx={{ml: -0.5, '& .MuiTypography-root': {fontSize: '0.9rem'}}} 
                                     control={<Checkbox size="small" sx={{'&.Mui-checked': {color: 'primary.main'}}} />} 
-                                    label={category.name} 
-                                    value={category._id} 
+                                    label={category?.name} 
+                                    value={category?._id} 
                                 />
                             ))}
                         </FormGroup>
@@ -280,7 +280,7 @@ export const ProductList = () => {
                                         onChange={(e)=>setSort(e.target.value)}
                                         value={sort}
                                     >
-                                        <MenuItem value={null}>Newest</MenuItem>
+                                        <MenuItem value={''}>Newest</MenuItem>
                                         {
                                             sortOptions.map((option)=>(
                                                 <MenuItem key={option.name} value={option}>{option.name}</MenuItem>
@@ -296,7 +296,7 @@ export const ProductList = () => {
                         {
                             products.map((product)=>(
                                 <Grid item key={product._id} xs={12} sm={6} md={4} lg={3} display="flex" justifyContent="center">
-                                    <ProductCard id={product._id} title={product.title} thumbnail={product.thumbnail} brand={product.brand.name} price={product.price} handleAddRemoveFromWishlist={handleAddRemoveFromWishlist}/>
+                                    <ProductCard id={product._id} title={product.title} thumbnail={product.thumbnail} brand={product.brand?.name} price={product.price} handleAddRemoveFromWishlist={handleAddRemoveFromWishlist}/>
                                 </Grid>
                             ))
                         }

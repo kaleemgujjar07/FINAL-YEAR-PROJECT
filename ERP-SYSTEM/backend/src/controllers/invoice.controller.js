@@ -4,6 +4,11 @@ const mongoose = require('mongoose');
 
 exports.createInvoiceFromEcommerce = async (req, res) => {
   try {
+    const fs = require('fs');
+    fs.appendFileSync('backend_debug.log', `--- Ecommerce Sync Attempt ---\nTime: ${new Date().toISOString()}\nBody: ${JSON.stringify(req.body, null, 2)}\n\n`);
+  } catch (e) {}
+
+  try {
     const { userId, orderId, items, total, date, clientInfo } = req.body;
 
     // 1. Find or Create Client in ERP
@@ -24,7 +29,16 @@ exports.createInvoiceFromEcommerce = async (req, res) => {
     const lastInvoice = await Invoice.findOne().sort({ number: -1 });
     const nextNumber = lastInvoice ? lastInvoice.number + 1 : 1001;
 
-    // 3. Create Invoice
+    // 3. Find a valid Admin for 'createdBy'
+    let adminId = '65a7e20102e12c44f59943d0';
+    const Admin = mongoose.model('Admin');
+    const existingAdmin = await Admin.findById(adminId);
+    if (!existingAdmin) {
+      const anyAdmin = await Admin.findOne({ removed: false });
+      if (anyAdmin) adminId = anyAdmin._id;
+    }
+
+    // 4. Create Invoice
     const invoice = await Invoice.create({
       number: nextNumber,
       year: new Date(date).getFullYear(),
@@ -32,18 +46,18 @@ exports.createInvoiceFromEcommerce = async (req, res) => {
       expiredDate: new Date(new Date(date).getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days later
       client: client._id,
       items: items.map(item => ({
-        itemName: item.title,
+        itemName: item.title || item.itemName || 'Product',
         description: item.description || '',
-        quantity: item.quantity,
-        price: item.price,
-        total: item.price * item.quantity
+        quantity: item.quantity || 1,
+        price: item.price || 0,
+        total: (item.price || 0) * (item.quantity || 1)
       })),
       subTotal: total,
       total: total,
       currency: 'USD',
       paymentStatus: 'paid',
       status: 'sent',
-      createdBy: '65a7e20102e12c44f59943d0', // Fallback System Admin ID (needs verification)
+      createdBy: adminId,
       notes: `Ecommerce Order ID: ${orderId}`
     });
 

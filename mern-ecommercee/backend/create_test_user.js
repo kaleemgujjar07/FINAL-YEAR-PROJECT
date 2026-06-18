@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
-const User = require('../models/User');
-const { connectToDB } = require('../database/db');
+const User = require('./models/User');
+const { connectToDB } = require('./database/db');
 
 const createTestUser = async () => {
     try {

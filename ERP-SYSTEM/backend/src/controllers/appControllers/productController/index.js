@@ -6,6 +6,88 @@ const Product = mongoose.model('Product');
 const methods = createCRUDController('Product');
 
 const AI_SERVICE_URL = 'http://localhost:8050';
+const ECOMMERCE_API_URL = process.env.ECOMMERCE_API_URL || 'http://localhost:8000';
+
+const safeString = (value, fallback = '') => typeof value === 'string' && value.trim() ? value.trim() : fallback;
+
+const mapEcommerceProductPayload = (product) => {
+  const title = safeString(product.title || product.name, 'Untitled Product');
+  const description = safeString(product.description, title);
+  const price = Number(product.price || 0);
+  const stockQuantity = Number(product.quantity ?? product.stockQuantity ?? 0);
+  const thumbnail = safeString(product.thumbnail, 'https://via.placeholder.com/300x300?text=No+Image');
+  const images = Array.isArray(product.images) && product.images.length ? product.images : [thumbnail];
+  const category = safeString(product.category, 'Uncategorized');
+  const brand = safeString(product.brand?.name || product.brand || product.brandName, 'Generic');
+
+  return {
+    erpProductId: String(product._id),
+    title,
+    description,
+    price,
+    stockQuantity,
+    thumbnail,
+    images,
+    discountPercentage: Number(product.discountPercentage ?? 0),
+    category,
+    brand,
+    isDeleted: Boolean(product.removed || product.isDeleted),
+  };
+};
+
+const syncProductToEcommerce = async (product) => {
+  try {
+    const payload = mapEcommerceProductPayload(product);
+    await axios.post(`${ECOMMERCE_API_URL}/products/sync`, payload, { timeout: 10000 });
+    console.log('ERP product synced to ecommerce:', product._id);
+  } catch (error) {
+    console.error('ERP -> Ecommerce sync failed:', error.message);
+    if (error.response) {
+      console.error('Sync response:', error.response.status, JSON.stringify(error.response.data));
+    }
+  }
+};
+
+methods.create = async (req, res) => {
+  try {
+    req.body.removed = false;
+    req.body.createdBy = req.admin._id;
+    const created = await new Product({ ...req.body }).save();
+    syncProductToEcommerce(created);
+    return res.status(200).json({ success: true, result: created, message: 'Successfully Created the document in Model' });
+  } catch (error) {
+    console.error('ERP Product create failed:', error);
+    return res.status(500).json({ success: false, result: null, message: 'Error creating product' });
+  }
+};
+
+methods.update = async (req, res) => {
+  try {
+    req.body.removed = false;
+    if (req.body.createdBy) delete req.body.createdBy;
+    const result = await Product.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        removed: false,
+      },
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).exec();
+
+    if (!result) {
+      return res.status(404).json({ success: false, result: null, message: 'No document found' });
+    }
+
+    syncProductToEcommerce(result);
+    return res.status(200).json({ success: true, result, message: 'we update this document' });
+  } catch (error) {
+    console.error('ERP Product update failed:', error);
+    return res.status(500).json({ success: false, result: null, message: 'Error updating product' });
+  }
+};
 
 methods.getAiPriceSuggestion = async (req, res) => {
   try {

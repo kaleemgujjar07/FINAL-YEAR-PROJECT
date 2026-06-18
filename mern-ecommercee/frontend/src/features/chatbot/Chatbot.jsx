@@ -30,7 +30,7 @@ export const Chatbot = () => {
   
   useEffect(() => {
     if (user) {
-      console.log("Chatbot: User recognized as:", user.name, "ID:", user._id);
+      console.log("Chatbot: User recognized as:", user.name || user.email || "Unknown", "ID:", user._id);
     } else {
       console.log("Chatbot: No user logged in.");
     }
@@ -129,23 +129,32 @@ export const Chatbot = () => {
         if (user && cartItems.length > 0) {
           let addedCount = 0;
           for (const item of cartItems) {
-            let bestMatch = null;
-            if (item.product_id) {
-              bestMatch = products.find(p => p._id === item.product_id);
-            }
-            
-            if (!bestMatch && item.title) {
-              const titleLower = item.title.toLowerCase();
-              bestMatch = products.find(p => p.title.toLowerCase().includes(titleLower) || titleLower.includes(p.title.toLowerCase()));
-            }
+            const productId = item.product_id;
+            const productTitle = item.title || "Product";
 
-            if (bestMatch) {
+            if (productId) {
               try {
-                await dispatch(addToCartAsync({ product: bestMatch._id, user: user._id })).unwrap();
+                await dispatch(addToCartAsync({ product: productId, user: user._id })).unwrap();
                 addedCount++;
-                toast.success(`Agent added: ${bestMatch.title}`, { position: "bottom-right", autoClose: 2000 });
+                toast.success(`Agent added: ${productTitle}`, { position: "bottom-right", autoClose: 2000 });
               } catch (err) {
-                console.error("Failed to add item:", bestMatch.title, err);
+                console.error("Failed to add item:", productTitle, err);
+              }
+            } else {
+              // Fallback to title matching if no ID was returned
+              let bestMatch = products.find(p => 
+                p.title.toLowerCase().includes(productTitle.toLowerCase()) || 
+                productTitle.toLowerCase().includes(p.title.toLowerCase())
+              );
+              
+              if (bestMatch) {
+                try {
+                  await dispatch(addToCartAsync({ product: bestMatch._id, user: user._id })).unwrap();
+                  addedCount++;
+                  toast.success(`Agent added: ${bestMatch.title}`, { position: "bottom-right", autoClose: 2000 });
+                } catch (err) {
+                  console.error("Failed to add item:", bestMatch.title, err);
+                }
               }
             }
           }
@@ -204,7 +213,8 @@ export const Chatbot = () => {
               elevation={12} 
               sx={{ 
                 width: { xs: '90vw', sm: 380 }, 
-                height: 550, 
+                height: { xs: '70vh', sm: 550 },
+                maxHeight: 'calc(100vh - 120px)',
                 display: 'flex', 
                 flexDirection: 'column',
                 borderRadius: '24px',

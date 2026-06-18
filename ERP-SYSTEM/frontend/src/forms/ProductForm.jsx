@@ -3,6 +3,7 @@ import { Button, Form, Input, InputNumber, Select, message } from 'antd';
 import { RobotOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import useLanguage from '@/locale/useLanguage';
+import { API_BASE_URL } from '@/config/serverApiConfig';
 
 export default function ProductForm({ isUpdateForm = false }) {
   const translate = useLanguage();
@@ -12,14 +13,16 @@ export default function ProductForm({ isUpdateForm = false }) {
   const handleAskAI = async () => {
     setLoadingAI(true);
     try {
-      // In a real app we might pass the competitor price or demand factors.
-      const res = await axios.post('http://localhost:8050/price-suggestion', {
+      // Calling the backend API which proxies to the AI Service
+      const res = await axios.post(API_BASE_URL + 'product/ai-price-suggestion', {
         base_price: form.getFieldValue('price') || 100,
         demand: 'high',
         competitor_price: null
       });
-      form.setFieldsValue({ price: res.data.suggested_price });
-      message.success(`AI suggested an optimized price: $${res.data.suggested_price} (${res.data.logic})`);
+      
+      const { suggested_price, logic } = res.data.result;
+      form.setFieldsValue({ price: suggested_price });
+      message.success(`AI suggested an optimized price: $${suggested_price} (${logic})`);
     } catch (err) {
       message.error("AI service unreachable or failed.");
     }
@@ -64,15 +67,18 @@ export default function ProductForm({ isUpdateForm = false }) {
 
       <Form.Item
         label={translate('Price')}
-        rules={[
-          {
-            required: true,
-            message: 'Please input price!',
-          },
-        ]}
       >
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Form.Item name="price" noStyle>
+          <Form.Item 
+            name="price" 
+            noStyle
+            rules={[
+              {
+                required: true,
+                message: 'Please input price!',
+              },
+            ]}
+          >
             <InputNumber
               className="moneyInput"
               min={0}

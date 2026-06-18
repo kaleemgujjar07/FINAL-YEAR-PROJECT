@@ -43,7 +43,24 @@ const productSchema= new Schema({
     isDeleted:{
         type:Boolean,
         default:false
-    }
+    },
+    erpProductId: {
+        type: String,
+        index: true,
+        sparse: true
+    },
+    // 🔗 ERP COMPATIBILITY FIELDS
+    name: { type: String },
+    quantity: { type: Number },
+    removed: { type: Boolean, default: false }
 },{timestamps:true,versionKey:false})
+
+// 🔁 SYNC HOOKS FOR ERP
+productSchema.pre('save', function (next) {
+    if (this.title) this.name = this.title;
+    if (this.stockQuantity !== undefined) this.quantity = this.stockQuantity;
+    if (this.isDeleted !== undefined) this.removed = this.isDeleted;
+    next();
+});
 
 module.exports=mongoose.model('Product',productSchema)

@@ -103,7 +103,7 @@ export const UserOrders = () => {
                         {/* orders mapping */}
                         {
                             orders && orders.map((order)=>(
-                                <Stack p={is480?0:2} component={is480?"":Paper} elevation={1} rowGap={2}>
+                                <Stack key={order._id} p={is480?0:2} component={is480?"":Paper} elevation={1} rowGap={2}>
                                     
                                     {/* upper */}
                                     <Stack flexDirection={'row'} rowGap={'1rem'}  justifyContent={'space-between'} flexWrap={'wrap'}>
@@ -133,9 +133,9 @@ export const UserOrders = () => {
                                     <Stack rowGap={2}>
 
                                         {
-                                            order.item.map((product)=>(
+                                            order.item.map((product, index)=>(
                                                 
-                                                <Stack mt={2} flexDirection={'row'} rowGap={is768?'2rem':''} columnGap={4} flexWrap={is768?"wrap":"nowrap"}>
+                                                <Stack key={product.product?._id || index} mt={2} flexDirection={'row'} rowGap={is768?'2rem':''} columnGap={4} flexWrap={is768?"wrap":"nowrap"}>
                                                     
                                                     <Stack>
                                                         <img 
