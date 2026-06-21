@@ -39,7 +39,7 @@ const userSchema=new Schema({
 userSchema.post('save', async function (doc, next) {
     try {
         await axios.post(
-            'http://localhost:8888/api/clients/from-ecommerce',
+            `${process.env.ERP_SERVICE_URL}/api/clients/from-ecommerce`,
             {
                 userId: doc._id,
                 name: doc.name,
@@ -50,7 +50,7 @@ userSchema.post('save', async function (doc, next) {
             },
             {
                 headers: {
-                    'x-internal-key': 'supersecret123', // Use env in real apps, hardcoded from .env seen
+                    'x-internal-key': process.env.ERP_INTERNAL_KEY,
                 },
             }
         );

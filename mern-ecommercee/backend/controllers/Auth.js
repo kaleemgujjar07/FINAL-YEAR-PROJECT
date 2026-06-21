@@ -30,7 +30,7 @@ console.log("Created User ID:", createdUser._id);
 // 🔁 SYNC TO ERP
 try {
   await axios.post(
-    'http://localhost:8888/api/clients/from-ecommerce',
+    `${process.env.ERP_SERVICE_URL}/api/clients/from-ecommerce`,
     {
       userId: createdUser._id,
       name: createdUser.name,
@@ -86,7 +86,7 @@ exports.login=async(req,res)=>{
             // 🔁 SYNC TO ERP (Idempotent)
             try {
               await axios.post(
-                'http://localhost:8888/api/clients/from-ecommerce',
+                `${process.env.ERP_SERVICE_URL}/api/clients/from-ecommerce`,
                 {
                   userId: existingUser._id,
                   name: existingUser.name,

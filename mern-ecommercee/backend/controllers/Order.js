@@ -46,7 +46,7 @@ exports.create=async(req,res)=>{
           }
 
           await axios.post(
-            'http://localhost:8888/api/invoices/from-ecommerce',
+            `${process.env.ERP_SERVICE_URL}/api/invoices/from-ecommerce`,
             {
               userId: order.user,
               orderId: order._id,

@@ -19,9 +19,7 @@ import { addToCartAsync } from '../cart/CartSlice';
 import { toast } from 'react-toastify';
 import { Button } from '@mui/material';
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
-
-const AI_SERVICE_URL = 'http://127.0.0.1:8050';
-
+const AI_SERVICE_URL = process.env.REACT_APP_AI_SERVICE_URL;
 export const Chatbot = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();

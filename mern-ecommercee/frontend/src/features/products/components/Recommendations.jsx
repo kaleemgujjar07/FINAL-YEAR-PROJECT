@@ -19,9 +19,7 @@ export const Recommendations = () => {
     const products = useSelector(selectProducts);
     const wishlistItems = useSelector(selectWishlistItems);
     const loggedInUser = useSelector(selectLoggedInUser);
-    
-    const AI_SERVICE_URL = 'http://localhost:8050';
-
+    const AI_SERVICE_URL = process.env.REACT_APP_AI_SERVICE_URL;
     useEffect(() => {
         const fetchRecommendations = async () => {
             try {
