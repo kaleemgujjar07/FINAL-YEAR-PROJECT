@@ -33,17 +33,17 @@
 
 ```mermaid
 graph TD
-    User[Customer / Admin User] -->|React Frontend| ERP_FE[ERP Dashboard (Vite + React)]
-    User -->|React Frontend| ECO_FE[E-Commerce Storefront (React)]
+    User["Customer / Admin User"] -->|"React Frontend"| ERP_FE["ERP Dashboard (Vite + React)"]
+    User -->|"React Frontend"| ECO_FE["E-Commerce Storefront (React)"]
     
-    ECO_FE -->|REST API| ECO_BE[E-Commerce Backend (Express)]
-    ERP_FE -->|REST API| ERP_BE[ERP Backend (Express)]
-    ECO_FE -->|AI Queries| AI_SVC[Python AI Agent Service]
+    ECO_FE -->|"REST API"| ECO_BE["E-Commerce Backend (Express)"]
+    ERP_FE -->|"REST API"| ERP_BE["ERP Backend (Express)"]
+    ECO_FE -->|"AI Queries"| AI_SVC["Python AI Agent Service"]
     
-    AI_SVC -->|Gemini API| Gemini[Google Gemini 2.5 Flash Model]
-    AI_SVC -->|Function Execution| MongoDB[(MongoDB Cloud Atlas)]
-    ERP_BE -->|Database Queries| MongoDB
-    ECO_BE -->|Database Queries| MongoDB
+    AI_SVC -->|"Gemini API"| Gemini["Google Gemini 2.5 Flash Model"]
+    AI_SVC -->|"Function Execution"| MongoDB[("MongoDB Cloud Atlas")]
+    ERP_BE -->|"Database Queries"| MongoDB
+    ECO_BE -->|"Database Queries"| MongoDB
 ```
 
 ---
