@@ -5,7 +5,7 @@ import sys
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from groq import Groq
+from openai import OpenAI
 import logging
 import traceback
 import inspect
@@ -16,11 +16,14 @@ logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
 load_dotenv()
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    logger.error("GROQ_API_KEY not found in environment variables!")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    logger.error("GEMINI_API_KEY not found in environment variables!")
 
-client_groq = Groq()
+client_openai = OpenAI(
+    api_key=GEMINI_API_KEY,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
 
 VERSION = "Grounded-v2.1"
 print(f"--- COGNIVIO AGENT STARTING VERSION: {VERSION} ---")
@@ -341,6 +344,31 @@ def calculate_forecast(historical_data, steps=6):
     trend = "increasing" if slope > 0.05 else ("decreasing" if slope < -0.05 else "stable")
     return forecasts, trend
 
+def get_customer_count():
+    """Fetches total count of registered customers/clients in the system."""
+    if db is None: return "Database offline."
+    try:
+        users_count = db["users"].count_documents({})
+        clients_count = db["clients"].count_documents({"removed": {"$ne": True}})
+        total_customers = max(users_count, clients_count)
+        if total_customers == 0:
+            return "Currently, there are 0 registered customers in the system."
+        return f"Currently, there are {total_customers} registered customer(s) in the system."
+    except Exception as e:
+        logger.error(f"Customer Count Error: {e}")
+        return f"Error fetching customer count: {str(e)}"
+
+def get_employee_attendance():
+    """Fetches total employee count and how many are present today."""
+    if db is None: return "Database offline."
+    try:
+        total_employees = db["employees"].count_documents({"removed": {"$ne": True}})
+        present_count = db["attendances"].count_documents({"status": {"$in": ["Present", "Half Day"]}, "removed": {"$ne": True}})
+        return f"Total Employees: {total_employees}. Employees present today: {present_count}."
+    except Exception as e:
+        logger.error(f"Attendance Tool Error: {e}")
+        return f"Error fetching employee attendance: {str(e)}"
+
 # --- TOOL DEFINITIONS ---
 
 SEARCH_KNOWLEDGE_TOOL = {
@@ -358,8 +386,36 @@ SEARCH_KNOWLEDGE_TOOL = {
     }
 }
 
+GET_CUSTOMER_COUNT_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "get_customer_count",
+        "description": "Get the total number of registered customers or clients currently in the database.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    }
+}
+
+GET_EMPLOYEE_ATTENDANCE_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "get_employee_attendance",
+        "description": "Get the total number of employees and how many are present today.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    }
+}
+
 CUSTOMER_TOOLS = [
     SEARCH_KNOWLEDGE_TOOL,
+    GET_CUSTOMER_COUNT_TOOL,
+    GET_EMPLOYEE_ATTENDANCE_TOOL,
     {
         "type": "function",
         "function": {
@@ -465,6 +521,8 @@ CUSTOMER_TOOLS = [
 
 ADMIN_TOOLS = [
     SEARCH_KNOWLEDGE_TOOL,
+    GET_CUSTOMER_COUNT_TOOL,
+    GET_EMPLOYEE_ATTENDANCE_TOOL,
     {
         "type": "function",
         "function": {
@@ -504,6 +562,8 @@ available_functions = {
     "get_user_orders": get_user_orders,
     "get_product_recommendations": get_product_recommendations,
     "search_products": search_products,
+    "get_customer_count": get_customer_count,
+    "get_employee_attendance": get_employee_attendance,
 }
 
 # --- PROMPTS ---
@@ -552,8 +612,8 @@ def run_agentic_conversation(user_message, chat_history=[], role="customer", use
         detected_entities = {"cart_items": []}
 
         logger.info("Calling initial LLM completion...")
-        response = client_groq.chat.completions.create(
-            model="llama-3.1-8b-instant",
+        response = client_openai.chat.completions.create(
+            model="gemini-2.5-flash",
             messages=messages,
             tools=selected_tools,
             tool_choice="auto"
@@ -654,8 +714,8 @@ def run_agentic_conversation(user_message, chat_history=[], role="customer", use
                 })
 
             logger.info("Calling final LLM completion with tool results...")
-            final_response = client_groq.chat.completions.create(
-                model="llama-3.1-8b-instant",
+            final_response = client_openai.chat.completions.create(
+                model="gemini-2.5-flash",
                 messages=messages
             )
             final_content = final_response.choices[0].message.content
