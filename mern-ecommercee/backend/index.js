@@ -23,13 +23,23 @@ const server=express()
 connectToDB()
 
 
-// middlewares
-server.use(cors({
-    origin: (origin, callback) => callback(null, true),
-    credentials: true,
-    exposedHeaders: ['X-Total-Count'],
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS']
-}))
+// middlewares - CORS headers set manually to ensure they work on all environments
+server.use((req, res, next) => {
+    const origin = req.headers.origin
+    if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin)
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', '*')
+    }
+    res.setHeader('Access-Control-Allow-Credentials', 'true')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token')
+    res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count')
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200)
+    }
+    next()
+})
 server.use(express.json())
 server.use(cookieParser())
 server.use(express.static('public'))
