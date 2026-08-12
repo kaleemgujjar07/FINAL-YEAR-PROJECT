@@ -874,7 +874,7 @@ class AIServiceHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({"status": "Agentic AI Online"}).encode('utf-8'))
 
-PORT = 8050
+PORT = int(os.getenv("PORT", 8050))
 socketserver.TCPServer.allow_reuse_address = True
 with socketserver.TCPServer(("", PORT), AIServiceHandler) as httpd:
     print(f"Cognivio Agentic Service running on port {PORT}")
