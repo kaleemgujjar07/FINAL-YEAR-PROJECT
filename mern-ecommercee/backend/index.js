@@ -57,7 +57,28 @@ server.use("/address",addressRoutes)
 server.use("/reviews",reviewRoutes)
 server.use("/wishlist",wishlistRoutes)
 
+// AI Service Proxy Routes (Fail-safe routing)
+const PYTHON_AI_URL = process.env.AI_SERVICE_URL || "https://python-ai-service.onrender.com";
 
+server.post("/assistant/process", async (req, res) => {
+    try {
+        const response = await axios.post(`${PYTHON_AI_URL}/assistant/process`, req.body);
+        res.status(response.status).json(response.data);
+    } catch (error) {
+        console.error("AI Assistant Proxy Error:", error.message);
+        res.status(500).json({ error: "Failed to process AI request" });
+    }
+});
+
+server.post("/recommendations", async (req, res) => {
+    try {
+        const response = await axios.post(`${PYTHON_AI_URL}/recommendations`, req.body);
+        res.status(response.status).json(response.data);
+    } catch (error) {
+        console.error("AI Recommendations Proxy Error:", error.message);
+        res.status(500).json({ recommendations: [] });
+    }
+});
 
 server.get("/",(req,res)=>{
     res.status(200).json({message:'running'})
