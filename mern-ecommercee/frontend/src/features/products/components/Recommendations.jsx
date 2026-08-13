@@ -19,7 +19,7 @@ export const Recommendations = () => {
     const products = useSelector(selectProducts);
     const wishlistItems = useSelector(selectWishlistItems);
     const loggedInUser = useSelector(selectLoggedInUser);
-    const AI_SERVICE_URL = process.env.REACT_APP_AI_SERVICE_URL || 'https://python-ai-service.onrender.com';
+    const AI_SERVICE_URL = process.env.REACT_APP_AI_SERVICE_URL || 'https://cognivio-ecommerce-backend.onrender.com';
     useEffect(() => {
         const fetchRecommendations = async () => {
             try {

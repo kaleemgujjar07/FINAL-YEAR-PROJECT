@@ -19,7 +19,7 @@ import { addToCartAsync } from '../cart/CartSlice';
 import { toast } from 'react-toastify';
 import { Button } from '@mui/material';
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
-const AI_SERVICE_URL = process.env.REACT_APP_AI_SERVICE_URL || 'https://python-ai-service.onrender.com';
+const AI_SERVICE_URL = process.env.REACT_APP_AI_SERVICE_URL || 'https://cognivio-ecommerce-backend.onrender.com';
 export const Chatbot = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
