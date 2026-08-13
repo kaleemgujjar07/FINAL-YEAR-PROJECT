@@ -735,11 +735,35 @@ def run_agentic_conversation(user_message, chat_history=[], role="customer", use
 # --- HTTP SERVER ---
 
 class AIServiceHandler(http.server.BaseHTTPRequestHandler):
+    def _send_cors(self, status=200, content_type="application/json"):
+        self.send_response(status)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth-token')
+        if content_type:
+            self.send_header('Content-type', content_type)
+
+    def do_OPTIONS(self):
+        self._send_cors(200, None)
+        self.end_headers()
+
+    def do_GET(self):
+        self._send_cors(200)
+        self.end_headers()
+        self.wfile.write(json.dumps({"status": "Agentic AI Online"}).encode('utf-8'))
+
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        data = json.loads(self.rfile.read(content_length).decode('utf-8'))
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            raw_body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else '{}'
+            data = json.loads(raw_body) if raw_body else {}
+        except Exception as pe:
+            logger.error(f"Payload parse error: {pe}")
+            data = {}
+
+        clean_path = self.path.rstrip('/')
         
-        if self.path == '/assistant/process':
+        if clean_path == '/assistant/process':
             try:
                 user_msg = data.get('message', '')
                 history = data.get('history', [])
@@ -756,17 +780,16 @@ class AIServiceHandler(http.server.BaseHTTPRequestHandler):
                     "role_active": role
                 }
                 
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
+                self._send_cors(200)
                 self.end_headers()
                 self.wfile.write(json.dumps(response_payload).encode('utf-8'))
             except Exception as e:
                 logger.error(f"HTTP Handler Error: {e}")
-                self.send_response(500)
+                self._send_cors(500)
                 self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
         
-        elif self.path == '/forecast/series':
+        elif clean_path == '/forecast/series':
             try:
                 historical_data = data.get('historical_data', [])
                 steps = data.get('steps', 6)
@@ -779,23 +802,21 @@ class AIServiceHandler(http.server.BaseHTTPRequestHandler):
                     "status": "success"
                 }
                 
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
+                self._send_cors(200)
                 self.end_headers()
                 self.wfile.write(json.dumps(response_payload).encode('utf-8'))
             except Exception as e:
                 logger.error(f"Forecast Error: {e}")
-                self.send_response(500)
+                self._send_cors(500)
                 self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
 
-        elif self.path == '/price-suggestion':
+        elif clean_path == '/price-suggestion':
             try:
                 base_price = float(data.get('base_price', 100))
                 demand = data.get('demand', 'medium')
                 competitor_price = data.get('competitor_price')
                 
-                # Intelligent Pricing Logic
                 suggested_price = base_price
                 logic = "Stable market conditions. Base price maintained."
                 
@@ -818,23 +839,19 @@ class AIServiceHandler(http.server.BaseHTTPRequestHandler):
                     "status": "success"
                 }
                 
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
+                self._send_cors(200)
                 self.end_headers()
                 self.wfile.write(json.dumps(response_payload).encode('utf-8'))
             except Exception as e:
                 logger.error(f"Price Suggestion Error: {e}")
-                self.send_response(500)
+                self._send_cors(500)
                 self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
 
-        elif self.path == '/recommendations':
+        elif clean_path == '/recommendations':
             try:
-                # Simple recommendation logic: fetch some featured products
-                # In a real app, this would use the user_id and product_history from the request
                 if db is not None:
                     coll = db["products"]
-                    # Fetch products with highest stock or just the first few
                     products_list = list(coll.find({}, {"title": 1}).limit(10))
                     import random
                     if len(products_list) > 4:
@@ -844,35 +861,25 @@ class AIServiceHandler(http.server.BaseHTTPRequestHandler):
                     
                     titles = [p['title'] for p in sampled_products]
                 else:
-                    titles = ["Laptop", "Wireless Mouse", "Keyboard", "Monitor"] # Fallback
+                    titles = ["Laptop", "Wireless Mouse", "Keyboard", "Monitor"]
                 
                 response_payload = {
                     "recommendations": titles,
                     "status": "success"
                 }
                 
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
+                self._send_cors(200)
                 self.end_headers()
                 self.wfile.write(json.dumps(response_payload).encode('utf-8'))
             except Exception as e:
                 logger.error(f"Recommendations Error: {e}")
-                self.send_response(500)
+                self._send_cors(500)
                 self.end_headers()
-
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
-        
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps({"status": "Agentic AI Online"}).encode('utf-8'))
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+        else:
+            self._send_cors(404)
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Endpoint not found"}).encode('utf-8'))
 
 PORT = int(os.getenv("PORT", 8050))
 socketserver.TCPServer.allow_reuse_address = True
