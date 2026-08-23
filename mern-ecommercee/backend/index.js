@@ -58,7 +58,7 @@ server.use("/reviews",reviewRoutes)
 server.use("/wishlist",wishlistRoutes)
 
 // AI Service Proxy Routes (Fail-safe routing)
-const PYTHON_AI_URL = process.env.AI_SERVICE_URL || "https://python-ai-service.onrender.com";
+const PYTHON_AI_URL = process.env.AI_SERVICE_URL || "https://python-ai-service-g82q.onrender.com";
 
 server.post("/assistant/process", async (req, res) => {
     try {
