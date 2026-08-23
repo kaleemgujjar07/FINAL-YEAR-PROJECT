@@ -18,28 +18,45 @@ const assistantController = {
         return res.status(400).json({ success: false, message: 'Message is required' });
       }
 
-      // 1. Get NLP Intent and Suggestion from Local AI Service
+      // 1. Standalone Intelligent NLP Intent Parsing & Entity Extraction
+      const lower = message.toLowerCase().trim();
       let intent = 'unknown';
       let entities = {};
-      let aiSuggestion = "";
-      try {
-        const aiResponse = await axios.post(`${AI_SERVICE_URL}/assistant/process`, { 
-          message,
-          role: 'admin' // Ensure the AI knows it's in ERP/Admin context
-        });
-        intent = aiResponse.data.intent;
-        entities = aiResponse.data.entities || {};
-        aiSuggestion = aiResponse.data.suggestion || "";
-      } catch (err) {
-        console.error('AI Service Error:', err.message);
-        return res.status(200).json({
-          success: true,
-          result: "My Machine Learning engine (AI-SERVICE) is currently offline. Please start it up so I can understand you!"
-        });
+
+      // Extract year (e.g., 2024, 2025, 2026)
+      const yearMatch = lower.match(/\b(20\d\d)\b/);
+      if (yearMatch) entities.year = parseInt(yearMatch[1]);
+
+      // Extract month
+      const months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+      const monthShort = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+      months.forEach((m, idx) => {
+        if (lower.includes(m) || lower.includes(monthShort[idx])) entities.month = idx + 1;
+      });
+
+      // Intent classification with semantic keyword matching
+      if (/^(hi|hello|hey|greetings|hola|who are you|help|info|about)/i.test(lower)) {
+        intent = 'get_system_info';
+      } else if (lower.includes('low stock') || lower.includes('out of stock') || lower.includes('depleted') || lower.includes('restock') || lower.includes('shortage') || lower.includes('alert')) {
+        intent = 'get_low_stock_alerts';
+      } else if (lower.includes('top') || lower.includes('best seller') || lower.includes('best selling') || lower.includes('popular') || lower.includes('most sold')) {
+        intent = 'get_top_sales';
+      } else if (lower.includes('sale') || lower.includes('revenue') || lower.includes('invoice') || lower.includes('income') || lower.includes('earning')) {
+        intent = 'get_sales_summary';
+      } else if (lower.includes('inventory') || lower.includes('stock') || lower.includes('product') || lower.includes('warehouse') || lower.includes('catalog')) {
+        intent = 'get_inventory_status';
+      } else if (lower.includes('customer') || lower.includes('client') || lower.includes('buyer') || lower.includes('user')) {
+        intent = 'get_customer_summary';
+      } else if (lower.includes('employee') || lower.includes('hr') || lower.includes('staff') || lower.includes('worker') || lower.includes('team') || lower.includes('attendance')) {
+        intent = 'get_hr_summary';
+      } else if (lower.includes('expense') || lower.includes('cost') || lower.includes('spend') || lower.includes('payout')) {
+        intent = 'get_expense_summary';
+      } else {
+        intent = 'get_system_info';
       }
 
       const { month, year } = entities;
-      let resultMessage = aiSuggestion; // Default to AI's general response
+      let resultMessage = "";
 
       // 2. Perform Dynamic Database GROUNDING based on Local ML Intent
       // If the intent matches a hardcoded ERP report, the backend will provide specific data.
