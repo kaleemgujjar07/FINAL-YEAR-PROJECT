@@ -7,7 +7,7 @@ const Employee = mongoose.model('Employee');
 const Expense = mongoose.model('Expense');
 const Client = mongoose.model('Client');
 
-const AI_SERVICE_URL = 'http://localhost:8050';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://python-ai-service-g82q.onrender.com';
 
 const assistantController = {
   query: async (req, res) => {

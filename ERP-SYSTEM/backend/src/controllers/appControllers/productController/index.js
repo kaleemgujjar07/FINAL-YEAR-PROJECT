@@ -5,7 +5,7 @@ const Invoice = mongoose.model('Invoice');
 const Product = mongoose.model('Product');
 const methods = createCRUDController('Product');
 
-const AI_SERVICE_URL = 'http://localhost:8050';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://python-ai-service-g82q.onrender.com';
 const ECOMMERCE_API_URL = process.env.ECOMMERCE_API_URL || 'http://localhost:8000';
 
 const safeString = (value, fallback = '') => typeof value === 'string' && value.trim() ? value.trim() : fallback;

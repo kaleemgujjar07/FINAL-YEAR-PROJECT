@@ -4,7 +4,7 @@ const Invoice = mongoose.model('Invoice');
 const Expense = mongoose.model('Expense');
 const Product = mongoose.model('Product');
 
-const AI_SERVICE_URL = 'http://localhost:8050';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://python-ai-service-g82q.onrender.com';
 
 const statsController = {
   revenueForecast: async (req, res) => {
