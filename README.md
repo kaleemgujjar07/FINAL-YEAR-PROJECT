@@ -8,6 +8,16 @@
 
 ---
 
+## 🌐 Live Demo & Deployments
+
+| Platform | Role / Purpose | Live URL | Demo Credentials |
+| :--- | :--- | :--- | :--- |
+| 🛍️ **E-Commerce Storefront** | Customer shopping, product catalog, cart & checkout, Voice/Text AI shopping agent | [Open Storefront](https://final-year-project-phi-sepia.vercel.app) | Register a free account |
+| 🏢 **ERP & CRM Dashboard** | Business intelligence, invoices, inventory, customer CRM, HR payroll, and AI assistant | [Open ERP Dashboard](https://cognivio-erp-frontend.vercel.app) | **Email:** `admin@admin.com`<br>**Password:** `admin123` |
+| 🤖 **Python AI Microservice** | Autonomous NLP agent, dynamic pricing, demand forecasting | [View AI Health](https://python-ai-service-g82q.onrender.com/) | API Service |
+
+---
+
 ## 🌟 Key Features
 
 ### 🤖 Autonomous Agentic AI Service
