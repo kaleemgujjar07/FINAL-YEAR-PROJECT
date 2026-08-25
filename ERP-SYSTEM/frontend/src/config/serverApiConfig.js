@@ -1,4 +1,5 @@
-const rawBackendServer = (import.meta.env.VITE_BACKEND_SERVER || 'http://localhost:8888').replace(/\/+$/, '');
+let rawBackendServer = (import.meta.env.VITE_BACKEND_SERVER || 'http://localhost:8888').trim();
+rawBackendServer = rawBackendServer.replace(/\/+$/, '').replace(/\/api$/, '');
 
 export const API_BASE_URL =
   import.meta.env.PROD || import.meta.env.VITE_DEV_REMOTE == 'remote'

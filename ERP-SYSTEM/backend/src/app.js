@@ -26,6 +26,12 @@ app.use(
   })
 );
 
+// Normalize duplicate leading slashes e.g. //api -> /api
+app.use((req, res, next) => {
+  req.url = req.url.replace(/^\/\/+/, '/');
+  next();
+});
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
